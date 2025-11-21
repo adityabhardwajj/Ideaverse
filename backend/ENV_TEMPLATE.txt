@@ -1,0 +1,41 @@
+# IdeaVerse Backend Environment Variables Template
+# Copy this file to .env and fill in your values
+
+# Server Configuration
+PORT=5000
+NODE_ENV=development
+
+# JWT Configuration (IMPORTANT: Change this in production!)
+JWT_SECRET=ideaverse_secret_change_this_in_production
+
+# Database Configuration
+# Option 1: Individual variables
+DB_NAME=ideaverse
+DB_USER=root
+DB_PASSWORD=your_mysql_password_here
+DB_HOST=localhost
+DB_PORT=3306
+DB_DIALECT=mysql
+
+# Option 2: Connection string (alternative for production)
+# DATABASE_URL=mysql://user:password@host:port/database
+
+# Frontend URL (for email links and CORS)
+FRONTEND_URL=http://localhost:5173
+
+# Optional: Email Service Configuration
+# Uncomment and configure if you want email verification and password reset
+
+# EMAIL_PROVIDER=smtp
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_SECURE=false
+# SMTP_USER=your_email@gmail.com
+# SMTP_PASS=your_app_password
+# EMAIL_FROM=noreply@ideaverse.com
+# EMAIL_FROM_NAME=IdeaVerse
+
+# Optional: Tech News API (for tech news feature)
+# Get free API key from https://newsapi.org
+# NEWS_API_KEY=your_news_api_key_here
+
