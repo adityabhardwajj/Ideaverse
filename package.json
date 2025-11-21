@@ -9,9 +9,6 @@
   "author": "",
   "license": "ISC",
   "description": "IdeaVerse - Innovation and Freelance Collaboration Platform",
-  "dependencies": {
-    "concurrently": "^9.2.1"
-  },
   "devDependencies": {
     "concurrently": "^9.2.1"
   }

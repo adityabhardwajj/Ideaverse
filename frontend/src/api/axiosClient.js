@@ -1,6 +1,6 @@
 import axios from "axios";
 import { toast } from "react-toastify";
-import { getToken, removeToken } from "../utils/tokenManager.js";
+import { tokenManager } from "../utils/tokenManager.js";
 
 // Use environment variable for API URL, fallback to localhost for development
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -15,7 +15,7 @@ const axiosClient = axios.create({
 // Request interceptor
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = getToken();
+    const token = tokenManager.getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -37,7 +37,7 @@ axiosClient.interceptors.response.use(
       switch (error.response.status) {
         case 401:
           // Unauthorized - clear token and redirect to login
-          removeToken();
+          tokenManager.clearTokens();
           if (window.location.pathname !== "/login") {
             window.location.href = "/login";
           }
