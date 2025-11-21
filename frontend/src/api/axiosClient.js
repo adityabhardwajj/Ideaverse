@@ -1,31 +1,21 @@
 import axios from "axios";
-import { tokenManager } from "../utils/tokenManager";
+import { toast } from "react-toastify";
+import { getToken, removeToken } from "../utils/tokenManager.js";
 
-const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000",
+// Use environment variable for API URL, fallback to localhost for development
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+const axiosClient = axios.create({
+  baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-let isRefreshing = false;
-let failedQueue = [];
-
-const processQueue = (error, token = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-
-  failedQueue = [];
-};
-
-API.interceptors.request.use(
+// Request interceptor
+axiosClient.interceptors.request.use(
   (config) => {
-    const token = tokenManager.getAccessToken();
+    const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -36,47 +26,50 @@ API.interceptors.request.use(
   }
 );
 
-API.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return API(originalRequest);
-          })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
+// Response interceptor
+axiosClient.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response) {
+      // Handle different error status codes
+      switch (error.response.status) {
+        case 401:
+          // Unauthorized - clear token and redirect to login
+          removeToken();
+          if (window.location.pathname !== "/login") {
+            window.location.href = "/login";
+          }
+          break;
+        case 403:
+          toast.error("Access denied");
+          break;
+        case 404:
+          // Resource not found - don't show toast for every 404
+          if (!error.config.url.includes("/api/")) {
+            toast.error("Resource not found");
+          }
+          break;
+        case 500:
+          toast.error("Server error. Please try again later.");
+          break;
+        default:
+          const errorMessage =
+            error.response?.data?.error?.message ||
+            error.response?.data?.message ||
+            "An error occurred";
+          toast.error(errorMessage);
       }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        const newToken = await tokenManager.refreshAccessToken();
-        processQueue(null, newToken);
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return API(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-        tokenManager.clearTokens();
-        if (window.location.pathname !== "/login") {
-          window.location.href = "/login";
-        }
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
+    } else if (error.request) {
+      // Network error
+      toast.error("Network error. Please check your connection.");
+    } else {
+      toast.error("An unexpected error occurred");
     }
 
     return Promise.reject(error);
   }
 );
 
-export default API;
+export default axiosClient;
